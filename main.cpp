@@ -10,7 +10,6 @@ bool Init();
 void CleanUp();
 void Run();
 void PrintVector(vector<vector<double>> mat);
-vector<vector<vector<double>>> CreateData();
 double ScaleNum(double n, double minN, double maxN, double min, double max);
 
 vector<vector<double>> MultMatrixs(vector<vector<double>> mat1, vector<vector<double>> mat2);
@@ -54,7 +53,7 @@ class NN{
         vector<vector<double>> trainingData; //holds training data
         vector<vector<double>> output; //holds the passes output
         vector<vector<double>> error; // holds the passes error
-        double cost; //cost of the network
+        double cost = 0; //cost of the network
         double LearningRate = .1;
     private:
 };
@@ -86,7 +85,6 @@ void NN :: Pass(vector<vector<double>> InputValues, vector<vector<double>> Train
 
 void NN :: BackProp(){
     error = SubMatrixs(trainingData, output); //calc the errors correct output minus received output
-    cost = 0;
     vector<vector<double>> TrainingError = TransMatrix(error);
     vector<vector<double>> nextLayerError;
     for(int i = 0; i < error.size(); i++){ //runs through the specfic neurons. calcs cost of the epoch
@@ -268,55 +266,26 @@ void Run()
     long rand1 = rand() * (RAND_MAX + 1) + rand();
     noise1 = new OpenSimplexNoise{rand1};
     NN network({2,4,1}, {{0,0,0,0},{0}}); //passes number of nodes per layer (first layer is inputs) and biases
-    // vector<vector<vector<double>>> data = CreateData();
-    // vector<vector<double>> inputs = data[0];
-    // vector<vector<double>> training = data[1];
-    // for(int i = 0; i < inputs.size(); i++){
-    //     pos.x = inputs[i][0]*4;
-    //     pos.y = inputs[i][1]*4;
-    //     pos.w = 4;
-    //     pos.h = 4;
-    //     SDL_SetRenderDrawColor(renderer, 255*training[i][0], 0, 255*training[i][0], 255);
-    //     SDL_RenderFillRect(renderer, &pos);
-    // }
-    // SDL_RenderPresent(renderer);
     vector<vector<double>> inputs = {{0,0},{1,0},{0,1},{1,1}};
     vector<vector<double>> training {{0},{1},{1},{0}};
+    double passes = 0;
     cout << "Training..." << endl;
-    for(int i = 0; i < 70000; i++){
+    for(int i = 0; i < 70001; i++){
         int num = rand() % inputs.size();
         network.Pass({inputs[num]}, {training[num]});
         network.BackProp();
+        passes++;
         if(i % 100 == 0){
             Draw(inputs, network);
             SDL_RenderPresent(renderer);
+            cout << network.cost/passes << "  \t" << i << endl;
+            network.cost = 0;
+            passes = 0;
         }
-        cout << "\t" << i << endl;
-        // for(int i = 0; i < network.neuronLayers.size(); i++){
-        //     cout << "layer " << i << endl;
-        //     PrintVector(network.neuronLayers[i].weights);
-        // }
     }
-    //network.Pass(inputs, training);
-    //cout << "cool" << endl;
-    //network.BackProp(); //breaks
-    //cout << "well" << endl;
-    // cout << "output" << endl;
-    // PrintVector(network.output);
     Draw(inputs, network);
     while (gameLoop)
     {   
-        // pos.x = 0;
-        // pos.y = 0;
-        // pos.w = screenWidth;
-        // pos.h = screenHeight;
-        // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        // SDL_RenderFillRect(renderer, &pos);
-
-        // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        
-        SDL_RenderPresent(renderer);
-
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
@@ -361,29 +330,6 @@ void Draw(vector<vector<double>> inputs, NN network){
             }
         }
     }
-}
-
-vector<vector<vector<double>>> CreateData(){
-    vector<vector<vector<double>>> data;
-    vector<vector<double>> input;
-    vector<vector<double>> output;
-    for(double x = 0; x < 125; x++){
-        for(double y = 0; y < 125; y++){
-            double num = static_cast<double>(rand())/RAND_MAX;
-            if(num < .01){
-                double type = (*noise1).eval(static_cast<int>(x)/featureSize, static_cast<int>(y)/featureSize);
-                type = ScaleNum(type, -1, 1, 0, 1);
-                type = round(type);
-                input.push_back({x, y});
-                if(type == 0)
-                    output.push_back({0,1});
-                else if(type == 1)
-                    output.push_back({1,0});
-            }
-        }
-    }
-    data = {input, output};
-    return data;
 }
 
 double ScaleNum(double n, double minN, double maxN, double min, double max){
